@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Elysian Chat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDPO6F4_e5cEq9u5TG1lDOjNmEgxYorPH0",
+  authDomain: "innoboard-sandbox.firebaseapp.com",
+  projectId: "innoboard-sandbox",
+  storageBucket: "innoboard-sandbox.firebasestorage.app",
+  messagingSenderId: "764067679772",
+  appId: "1:764067679772:web:41ef2558fa7e09656f99d9"
+};
+
+const fbApp  = initializeApp(firebaseConfig);
+const fbAuth = getAuth(fbApp);
+const gProv  = new GoogleAuthProvider();
+
+window.__auth         = fbAuth;
+window.__signIn       = (e,p) => signInWithEmailAndPassword(fbAuth,e,p);
+window.__signUp       = (e,p) => createUserWithEmailAndPassword(fbAuth,e,p);
+window.__signOut      = ()    => signOut(fbAuth);
+window.__googleSignIn = ()    => signInWithPopup(fbAuth,gProv);
+window.__updateProf   = (u,d) => updateProfile(u,d);
+window.__onAuth       = (cb)  => onAuthStateChanged(fbAuth,cb);
+// ✅ FIX: forceRefresh=true เพื่อให้ได้ token ใหม่เสมอ
+window.__getToken     = (u)   => u.getIdToken(true);
+window.dispatchEvent(new Event("fb-ready"));
+</script>
+
+<style>
+:root {
+  --bg0:#09090f; --bg1:#0f1117; --bg2:#13151e; --bg3:#1a1d28;
+  --bgi:#1f2235; --bgh:#242840; --bga:#2a2f52; --bgm:#0d0f18;
+  --ac:#7c6af7; --acs:#9b8dff; --acg:rgba(124,106,247,.28); --acd:rgba(124,106,247,.12);
+  --dn:#f87171; --ok:#4ade80; --wa:#fbbf24;
+  --t1:#eaecf6; --t2:#9ba3c4; --t3:#515880; --t4:#2e3454;
+  --bd:rgba(255,255,255,.06); --bh:rgba(255,255,255,.1);
+  --rs:6px; --rm:10px; --rl:16px; --rx:22px;
+  --sha:0 4px 20px rgba(124,106,247,.4);
+  --shm:0 8px 28px rgba(0,0,0,.55);
+  --shl:0 24px 64px rgba(0,0,0,.75);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg0);color:var(--t1);overflow:hidden;font-size:15px}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+input,textarea{font-family:inherit;outline:none}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--t4);border-radius:99px}
+
+/* AUTH */
+#auth{display:flex;align-items:center;justify-content:center;height:100vh;position:fixed;inset:0;z-index:200;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(124,106,247,.18) 0%,transparent 70%),var(--bg0);animation:fi .4s ease}
+.acard{width:420px;max-width:95vw;background:var(--bgm);border:1px solid var(--bd);border-radius:var(--rx);padding:40px 36px;box-shadow:var(--shl);position:relative;overflow:hidden}
+.acard::before{content:'';position:absolute;top:-1px;left:20%;right:20%;height:2px;background:linear-gradient(90deg,transparent,var(--ac),transparent)}
+.alogo{text-align:center;margin-bottom:28px}
+.alogo-ico{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,var(--ac),#a78bfa);display:inline-flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:14px;box-shadow:var(--sha)}
+.alogo h1{font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;background:linear-gradient(135deg,var(--t1),var(--acs));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.alogo p{font-size:.85rem;color:var(--t3);margin-top:4px}
+.atabs{display:flex;border-radius:var(--rm);background:var(--bgi);padding:4px;margin-bottom:24px}
+.atab{flex:1;padding:8px;border-radius:var(--rs);font-size:.85rem;font-weight:600;color:var(--t3);transition:all .2s;background:transparent}
+.atab.on{background:var(--bg3);color:var(--t1)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.72rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.field input{width:100%;background:var(--bgi);border:1px solid var(--bd);border-radius:var(--rm);padding:11px 14px;color:var(--t1);font-size:.92rem;transition:border-color .2s}
+.field input:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acd)}
+.field input::placeholder{color:var(--t4)}
+.btn-pr{width:100%;padding:12px;border-radius:var(--rm);background:var(--ac);color:#fff;font-size:.92rem;font-weight:700;font-family:'Syne',sans-serif;transition:all .2s;margin-top:6px;box-shadow:var(--sha)}
+.btn-pr:hover:not(:disabled){background:var(--acs);transform:translateY(-1px)}
+.btn-pr:disabled{opacity:.5;cursor:not-allowed}
+.divider{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--t4);font-size:.78rem}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--bd)}
+.btn-g{width:100%;padding:11px;border-radius:var(--rm);background:transparent;border:1px solid var(--bd);color:var(--t2);font-size:.88rem;font-weight:500;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s}
+.btn-g:hover{background:var(--bgh);border-color:var(--bh);color:var(--t1)}
+.aerr{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);border-radius:var(--rs);padding:10px 14px;color:var(--dn);font-size:.82rem;margin-bottom:12px;display:none}
+.aerr.show{display:block}
+
+/* APP LAYOUT */
+.app{display:grid;grid-template-columns:64px 240px 1fr;height:100vh;opacity:0;pointer-events:none;transition:opacity .3s}
+.app.vis{opacity:1;pointer-events:all}
+
+/* Rail */
+.rail{background:var(--bg0);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:8px;border-right:1px solid var(--bd);z-index:10}
+.rail-logo{width:44px;height:44px;border-radius:var(--rm);background:linear-gradient(135deg,var(--ac),#a78bfa);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:var(--sha);cursor:pointer;transition:border-radius .2s}
+.rail-logo:hover{border-radius:var(--rx)}
+.rail-sep{width:32px;height:2px;background:var(--bd);border-radius:99px}
+.rail-btn{width:44px;height:44px;border-radius:50%;background:var(--bg3);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--t2);transition:all .2s;cursor:pointer}
+.rail-btn:hover{border-radius:var(--rm);background:var(--acd);color:var(--acs);border-color:var(--ac)}
+
+/* Sidebar */
+.sb{background:var(--bg1);display:flex;flex-direction:column;border-right:1px solid var(--bd);overflow:hidden}
+.sb-head{padding:16px 14px 12px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.sb-title{font-family:'Syne',sans-serif;font-weight:800;font-size:.95rem}
+.btn-nr{width:28px;height:28px;border-radius:var(--rs);background:var(--acd);color:var(--acs);font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .2s;line-height:1}
+.btn-nr:hover{background:var(--ac);color:#fff;box-shadow:var(--sha)}
+.rl{padding:14px 14px 6px;font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);flex-shrink:0}
+.rlist{flex:1;overflow-y:auto;padding:0 8px 12px;display:flex;flex-direction:column;gap:2px}
+.ri{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:var(--rm);cursor:pointer;transition:all .15s;position:relative}
+.ri:hover{background:var(--bgh)}
+.ri.on{background:var(--bga)}
+.ri.on::before{content:'';position:absolute;left:-8px;top:50%;transform:translateY(-50%);width:3px;height:60%;background:var(--ac);border-radius:0 3px 3px 0}
+.ri-em{font-size:17px;width:22px;text-align:center;flex-shrink:0}
+.ri-name{flex:1;font-size:.875rem;font-weight:500;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .15s}
+.ri:hover .ri-name,.ri.on .ri-name{color:var(--t1)}
+.ri-acts{display:none;gap:2px;flex-shrink:0}
+.ri:hover .ri-acts{display:flex}
+.ri-btn{width:22px;height:22px;border-radius:4px;background:transparent;color:var(--t3);font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.ri-btn:hover{background:var(--bgh);color:var(--t1)}
+.ri-btn.d:hover{background:rgba(248,113,113,.15);color:var(--dn)}
+
+/* User bar */
+.ubar{padding:10px 12px;background:var(--bg0);border-top:1px solid var(--bd);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.uav{width:32px;height:32px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--ac),#a78bfa);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;font-family:'Syne',sans-serif;overflow:hidden}
+.uav img{width:100%;height:100%;object-fit:cover}
+.uinfo{flex:1;overflow:hidden}
+.uname{font-size:.82rem;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uemail{font-size:.7rem;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn-lo{width:28px;height:28px;border-radius:var(--rs);background:transparent;color:var(--t3);font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.btn-lo:hover{background:rgba(248,113,113,.15);color:var(--dn)}
+
+/* Main */
+.main{display:flex;flex-direction:column;background:var(--bg2);overflow:hidden}
+.ch{padding:14px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px;flex-shrink:0;background:rgba(19,21,30,.92);backdrop-filter:blur(8px)}
+.ch-em{font-size:22px}
+.chi{flex:1}
+.ch-n{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem}
+.ch-d{font-size:.74rem;color:var(--t3);margin-top:1px}
+.wsbadge{display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--t3);padding:4px 10px;border-radius:99px;border:1px solid var(--bd)}
+.wsdot{width:7px;height:7px;border-radius:50%;background:var(--dn);transition:background .3s}
+.wsdot.on{background:var(--ok);box-shadow:0 0 6px var(--ok)}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--t3);padding:40px}
+.empty-ic{font-size:64px;opacity:.35}
+.empty-t{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;color:var(--t2)}
+.empty-s{font-size:.85rem;text-align:center;line-height:1.6}
+
+/* Messages */
+#msgs{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:1px}
+.ddiv{display:flex;align-items:center;gap:12px;padding:12px 6px;color:var(--t4);font-size:.72rem;font-weight:600;letter-spacing:.05em}
+.ddiv::before,.ddiv::after{content:'';flex:1;height:1px;background:var(--bd)}
+.mg{display:flex;gap:12px;padding:4px 6px;border-radius:var(--rm);transition:background .15s;position:relative}
+.mg:hover{background:var(--bg3)}
+.mg.highlighted{background:var(--bga);transition:background .5s}
+.mav{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;margin-top:2px;font-family:'Syne',sans-serif;overflow:hidden}
+.mav img{width:100%;height:100%;object-fit:cover}
+.mb{flex:1;min-width:0}
+.mmeta{display:flex;align-items:baseline;gap:8px;margin-bottom:3px}
+.mun{font-weight:600;font-size:.88rem;color:var(--acs)}
+.mun.me{color:#f472b6}
+.mun.bot{color:#34d399;font-weight:700}
+.mun.voice-user{color:#fbbf24}
+.mt2{font-size:.69rem;color:var(--t4)}
+.medt{font-size:.65rem;color:var(--t4);font-style:italic}
+.mtxt{font-size:.9rem;color:var(--t1);line-height:1.55;word-break:break-word;white-space:pre-wrap}
+.msg-bot-bubble{background:linear-gradient(135deg,rgba(52,211,153,.08),rgba(124,106,247,.08));border:1px solid rgba(52,211,153,.2);border-radius:var(--rm);padding:10px 14px;margin-top:2px;font-size:.9rem;line-height:1.6;color:var(--t1);white-space:pre-wrap;word-break:break-word}
+
+/* Voice message bubble */
+.msg-voice-bubble{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:var(--rm);padding:10px 14px;margin-top:2px;font-size:.9rem;line-height:1.6;color:var(--t1);white-space:pre-wrap;word-break:break-word}
+.msg-voice-header{font-size:.72rem;color:var(--wa);font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:5px}
+
+/* Reply reference inside message */
+.msg-reply-ref{background:rgba(124,106,247,.07);border-left:3px solid var(--ac);border-radius:0 var(--rs) var(--rs) 0;padding:5px 10px;margin-bottom:5px;cursor:pointer;transition:background .15s;max-width:100%}
+.msg-reply-ref:hover{background:rgba(124,106,247,.15)}
+.msg-reply-ref-name{font-size:.72rem;color:var(--acs);font-weight:700;margin-bottom:1px}
+.msg-reply-ref-text{font-size:.75rem;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:500px}
+
+/* Reply bar above input */
+.reply-bar{display:flex;align-items:center;gap:10px;padding:7px 14px;background:var(--bg3);border:1px solid var(--bd);border-bottom:none;border-radius:var(--rm) var(--rm) 0 0;font-size:.8rem;color:var(--t2)}
+.reply-bar-label{color:var(--t3);font-size:.72rem}
+.reply-bar-name{color:var(--acs);font-weight:700}
+.reply-bar-text{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--t3);font-size:.78rem}
+.reply-bar-x{width:20px;height:20px;border-radius:50%;background:var(--bgh);color:var(--t3);font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s}
+.reply-bar-x:hover{background:rgba(248,113,113,.2);color:var(--dn)}
+
+/* Edit */
+.edta{width:100%;background:var(--bgi);border:1px solid var(--ac);border-radius:var(--rm);padding:8px 12px;color:var(--t1);font-size:.9rem;resize:none;line-height:1.5;margin-top:4px}
+.edacts{display:flex;gap:6px;margin-top:6px}
+.bx{padding:4px 10px;border-radius:var(--rs);font-size:.75rem;font-weight:600;transition:filter .15s}
+.bx:hover{filter:brightness(1.15)}
+.bx.pr{background:var(--ac);color:#fff}
+.bx.gh{background:var(--bgh);color:var(--t2)}
+.bx.dl{background:rgba(248,113,113,.15);color:var(--dn)}
+
+/* Hover actions */
+.mha{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:none;gap:4px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);padding:3px 4px;box-shadow:var(--shm)}
+.mg:hover .mha{display:flex}
+.hb{width:26px;height:26px;border-radius:4px;background:transparent;color:var(--t3);font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.hb:hover{background:var(--bgh);color:var(--t1)}
+.hb.d:hover{background:rgba(248,113,113,.15);color:var(--dn)}
+
+/* PDF */
+.pdf-card{display:flex;align-items:center;gap:12px;background:rgba(124,106,247,.07);border:1px solid rgba(124,106,247,.2);border-radius:var(--rm);padding:12px 14px;margin-top:4px;cursor:pointer;transition:all .2s;max-width:360px}
+.pdf-card:hover{background:rgba(124,106,247,.14);border-color:rgba(124,106,247,.45);transform:translateY(-1px);box-shadow:var(--shm)}
+.pdf-ico{font-size:30px;flex-shrink:0}
+.pdf-info{flex:1;min-width:0}
+.pdf-name{font-size:.85rem;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pdf-meta{font-size:.72rem;color:var(--t3);margin-top:3px}
+.pdf-ai{font-size:.72rem;color:#34d399;margin-top:2px;font-weight:600}
+.pdf-open-hint{font-size:.72rem;color:var(--acs);margin-top:4px}
+.up-prog{background:rgba(124,106,247,.1);border:1px solid rgba(124,106,247,.2);border-radius:var(--rm);padding:10px 14px;margin-top:4px;max-width:360px}
+.up-prog-bar{height:4px;background:var(--bg3);border-radius:99px;margin-top:8px;overflow:hidden}
+.up-prog-fill{height:100%;background:linear-gradient(90deg,var(--ac),var(--acs));border-radius:99px;animation:prog 1.5s ease infinite;width:60%}
+@keyframes prog{0%{width:20%}50%{width:80%}100%{width:20%}}
+
+/* Input */
+.iarea{padding:12px 20px 16px;flex-shrink:0}
+.ibox{display:flex;align-items:flex-end;gap:8px;background:var(--bgi);border:1px solid var(--bd);border-radius:var(--rl);padding:10px 14px;transition:border-color .2s}
+.ibox:focus-within{border-color:rgba(124,106,247,.4);box-shadow:0 0 0 3px var(--acd)}
+.ibox.has-reply{border-radius:0 0 var(--rl) var(--rl);border-top-color:transparent}
+.up-btn{width:32px;height:32px;border-radius:var(--rm);background:transparent;color:var(--t3);font-size:19px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;cursor:pointer;border:1px solid transparent}
+.up-btn:hover{background:var(--acd);color:var(--acs);border-color:var(--ac)}
+
+/* Voice button in toolbar */
+.voice-toolbar-btn{width:32px;height:32px;border-radius:var(--rm);background:transparent;color:var(--t3);font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;cursor:pointer;border:1px solid transparent}
+.voice-toolbar-btn:hover{background:rgba(251,191,36,.12);color:var(--wa);border-color:rgba(251,191,36,.3)}
+
+#txtin{flex:1;background:transparent;border:none;color:var(--t1);font-size:.9rem;line-height:1.5;resize:none;max-height:140px;min-height:22px}
+#txtin::placeholder{color:var(--t4)}
+#sndbtn{width:34px;height:34px;border-radius:var(--rm);background:var(--ac);color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;box-shadow:var(--sha)}
+#sndbtn:hover:not(:disabled){background:var(--acs);transform:scale(1.05)}
+#sndbtn:disabled{background:var(--bgh);box-shadow:none;cursor:not-allowed;opacity:.5}
+.ihint{padding:5px 14px 0;font-size:.72rem;color:var(--t4)}
+
+/* PDF Viewer */
+#pdfov{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;display:none;flex-direction:column;backdrop-filter:blur(6px)}
+#pdfov.open{display:flex}
+.pdf-toolbar{padding:10px 16px;background:var(--bg0);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.pdf-toolbar-name{flex:1;font-size:.9rem;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pdf-dl-btn{padding:6px 14px;border-radius:var(--rs);background:var(--acd);color:var(--acs);font-size:.8rem;font-weight:600;cursor:pointer;border:1px solid rgba(124,106,247,.3);transition:all .2s}
+.pdf-dl-btn:hover{background:var(--ac);color:#fff}
+.pdf-close-btn{padding:6px 14px;border-radius:var(--rs);background:var(--bgh);color:var(--t2);font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s}
+.pdf-close-btn:hover{background:rgba(248,113,113,.15);color:var(--dn)}
+#pdfframe{flex:1;border:none;background:#525659}
+
+/* Modals */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(4px)}
+.ov.open{opacity:1;pointer-events:all}
+.modal{background:var(--bgm);border:1px solid var(--bd);border-radius:var(--rx);padding:28px;width:420px;max-width:95vw;box-shadow:var(--shl);transform:scale(.94) translateY(8px);transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.ov.open .modal{transform:scale(1) translateY(0)}
+.mtitle{font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.mlbl{font-size:.72rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-bottom:7px}
+.minput{width:100%;background:var(--bgi);border:1px solid var(--bd);border-radius:var(--rm);padding:10px 13px;color:var(--t1);font-size:.9rem;transition:border-color .2s;margin-bottom:14px}
+.minput:focus{border-color:var(--ac)}
+.minput::placeholder{color:var(--t4)}
+.epick{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.eopt{width:36px;height:36px;border-radius:var(--rs);background:var(--bgi);border:1px solid var(--bd);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.eopt:hover,.eopt.sel{border-color:var(--ac);background:var(--acd)}
+.togrow{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bgi);border:1px solid var(--bd);border-radius:var(--rm);margin-bottom:20px;cursor:pointer}
+.togsw{width:38px;height:22px;background:var(--t4);border-radius:11px;position:relative;transition:background .2s;flex-shrink:0}
+.togsw.on{background:var(--ac)}
+.togsw::after{content:'';position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.togsw.on::after{transform:translateX(16px)}
+.macts{display:flex;gap:8px;justify-content:flex-end}
+.bm{padding:9px 20px;border-radius:var(--rm);font-size:.88rem;font-weight:600;font-family:'Syne',sans-serif;transition:all .2s}
+.bm.pr{background:var(--ac);color:#fff}
+.bm.pr:hover{background:var(--acs);box-shadow:var(--sha)}
+.bm.gh{background:var(--bgh);color:var(--t2)}
+.bm.gh:hover{background:var(--bga);color:var(--t1)}
+.bm.dl{background:rgba(248,113,113,.12);color:var(--dn)}
+.bm.dl:hover{background:rgba(248,113,113,.22)}
+.cfmic{font-size:40px;text-align:center;margin-bottom:12px}
+.cfmt{font-size:.88rem;color:var(--t2);line-height:1.6;text-align:center;margin-bottom:20px}
+.cfmh{color:var(--t1);font-weight:600}
+.sk{background:linear-gradient(90deg,var(--bg3) 25%,var(--bgh) 50%,var(--bg3) 75%);background-size:200% 100%;animation:shim 1.5s infinite;border-radius:var(--rs)}
+.twrap{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:9999}
+.toast{padding:10px 16px;border-radius:var(--rm);font-size:.84rem;font-weight:500;box-shadow:var(--shm);display:flex;align-items:center;gap:8px;animation:tin .3s cubic-bezier(.34,1.56,.64,1);border:1px solid var(--bd)}
+.toast.ok{background:#052e16;color:var(--ok);border-color:rgba(74,222,128,.2)}
+.toast.er{background:#1c0606;color:var(--dn);border-color:rgba(248,113,113,.2)}
+.toast.in{background:#0f0f2e;color:var(--acs);border-color:rgba(124,106,247,.2)}
+@keyframes shim{from{background-position:200% 0}to{background-position:-200% 0}}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+@keyframes tin{from{opacity:0;transform:translateX(20px) scale(.95)}to{opacity:1;transform:none}}
+
+.pdf-rename-btn{width:32px;height:32px;border-radius:var(--rs);background:rgba(124,106,247,.12);border:1px solid rgba(124,106,247,.2);color:var(--acs);font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;transition:all .2s;align-self:center}
+.pdf-rename-btn:hover{background:var(--ac);color:#fff;border-color:var(--ac);transform:scale(1.1)}
+.pdf-rename-btn.loading{animation:spin .8s linear infinite;pointer-events:none}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* ═══ VOICE CALL — phone-call UX ═══ */
+#voiceov {
+  position: fixed; inset: 0; z-index: 400;
+  display: none; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, #0d0f1a 0%, #0f1428 50%, #0a1020 100%);
+}
+#voiceov.open { display: flex; }
+.vc-phase { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 360px; padding: 0 24px; }
+.vc-phase.active { display: flex; }
+.vc-calling { gap: 0; text-align: center; }
+.vc-avatar-wrap {
+  width: 110px; height: 110px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--ac), #a78bfa);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 52px; margin: 60px auto 28px;
+  box-shadow: 0 0 0 0 rgba(124,106,247,.5);
+  animation: vc-ring 2s ease infinite;
+}
+@keyframes vc-ring {
+  0%   { box-shadow: 0 0 0 0   rgba(124,106,247,.5); }
+  70%  { box-shadow: 0 0 0 24px rgba(124,106,247,0); }
+  100% { box-shadow: 0 0 0 0   rgba(124,106,247,0); }
+}
+.vc-room-label { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; color: var(--t1); margin-bottom: 6px; }
+.vc-call-status { font-size: .85rem; color: var(--t3); margin-bottom: 56px; letter-spacing: .03em; }
+.vc-dots { display: flex; gap: 5px; justify-content: center; margin-bottom: 0; }
+.vc-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--t4); animation: vc-dot .9s ease infinite; }
+.vc-dots span:nth-child(2) { animation-delay: .18s; }
+.vc-dots span:nth-child(3) { animation-delay: .36s; }
+@keyframes vc-dot { 0%,80%,100%{opacity:.2;transform:scale(1)} 40%{opacity:1;transform:scale(1.3)} }
+.vc-call-btns { display: flex; gap: 48px; justify-content: center; margin-top: 52px; margin-bottom: 40px; }
+.vc-call-btns .btn-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.vc-call-btns .btn-wrap span { font-size: .74rem; color: var(--t3); }
+.vc-btn-circle { width: 68px; height: 68px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; border: none; cursor: pointer; transition: all .2s; }
+.vc-btn-circle:hover { transform: scale(1.08); }
+.vc-btn-answer  { background: #22c55e; box-shadow: 0 4px 20px rgba(34,197,94,.45); }
+.vc-btn-decline { background: var(--dn); box-shadow: 0 4px 20px rgba(248,113,113,.45); }
+.vc-incall { gap: 0; text-align: center; }
+.vc-incall-avatar { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--ac), #a78bfa); display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 48px auto 16px; }
+.vc-incall-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--t1); margin-bottom: 4px; }
+.vc-incall-status { font-size: .78rem; color: var(--ok); font-weight: 600; margin-bottom: 2px; }
+.vc-rec-badge { display: inline-flex; align-items: center; gap: 5px; font-size: .7rem; color: var(--dn); background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.25); border-radius: 99px; padding: 3px 10px; margin-bottom: 28px; margin-top: 6px; }
+.vc-rec-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dn); animation: blink 1s ease infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+.vc-timer-big { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 3rem; color: var(--t1); letter-spacing: .08em; line-height: 1; margin-bottom: 28px; }
+.vc-wave { display: flex; align-items: center; justify-content: center; gap: 3px; height: 40px; margin-bottom: 36px; }
+.vc-bar { width: 4px; min-height: 4px; border-radius: 2px; background: var(--t4); transition: height .08s ease; }
+.vc-wave.live .vc-bar { background: rgba(124,106,247,.7); }
+.vc-ctrl-row { display: flex; gap: 28px; justify-content: center; margin-bottom: 16px; }
+.vc-ctrl-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.vc-ctrl-wrap span { font-size: .72rem; color: var(--t3); }
+.vc-btn-ctrl { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; border: none; cursor: pointer; background: var(--bg3); border: 1px solid var(--bd); color: var(--t2); transition: all .2s; }
+.vc-btn-ctrl:hover { background: var(--bgh); color: var(--t1); }
+.vc-btn-ctrl.muted { background: rgba(248,113,113,.15); border-color: rgba(248,113,113,.3); color: var(--dn); }
+.vc-btn-hangup { width: 72px; height: 72px; border-radius: 50%; background: var(--dn); color: #fff; font-size: 28px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; margin: 8px auto 48px; box-shadow: 0 4px 24px rgba(248,113,113,.5); transition: all .2s; }
+.vc-btn-hangup:hover { transform: scale(1.08); background: #f87171; }
+.vc-summary { gap: 0; text-align: center; }
+.vc-ended-icon { font-size: 44px; margin: 48px auto 16px; display: block; }
+.vc-ended-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.3rem; color: var(--t1); margin-bottom: 6px; }
+.vc-ended-room { font-size: .8rem; color: var(--t3); margin-bottom: 24px; }
+.vc-stats { display: flex; gap: 0; border: 1px solid var(--bd); border-radius: var(--rm); overflow: hidden; margin-bottom: 24px; width: 100%; }
+.vc-stat { flex: 1; padding: 14px 8px; text-align: center; border-right: 1px solid var(--bd); }
+.vc-stat:last-child { border-right: none; }
+.vc-stat-val { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.3rem; color: var(--t1); display: block; margin-bottom: 3px; }
+.vc-stat-lbl { font-size: .68rem; color: var(--t3); text-transform: uppercase; letter-spacing: .06em; }
+.vc-transcript-wrap { width: 100%; text-align: left; margin-bottom: 16px; }
+.vc-transcript-label { font-size: .65rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--t3); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.vc-transcript-box { background: var(--bgi); border: 1px solid var(--bd); border-radius: var(--rm); padding: 12px; font-size: .84rem; color: var(--t2); line-height: 1.6; max-height: 140px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+.vc-transcript-box.loading { color: var(--t4); font-style: italic; display: flex; align-items: center; gap: 8px; min-height: 48px; }
+.vc-proc { display:none;align-items:center;justify-content:center;gap:8px;color:var(--acs);font-size:.82rem;padding:8px 0; }
+.vc-proc.show { display:flex; }
+.vc-summary-acts { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-bottom: 40px; }
+.vc-sum-btn { width: 100%; padding: 12px; border-radius: var(--rm); font-size: .88rem; font-weight: 600; font-family: 'Syne', sans-serif; cursor: pointer; border: none; transition: all .2s; }
+.vc-sum-btn.ai    { background: rgba(52,211,153,.12); color: #34d399; border: 1px solid rgba(52,211,153,.25); }
+.vc-sum-btn.ai:hover { background: rgba(52,211,153,.2); }
+.vc-sum-btn.send  { background: var(--ac); color: #fff; }
+.vc-sum-btn.send:hover { background: var(--acs); }
+.vc-sum-btn.close { background: var(--bgh); color: var(--t2); }
+.vc-sum-btn.close:hover { color: var(--t1); }
+.vc-sum-btn:disabled { opacity: .5; cursor: not-allowed; }
+.vc-spin-inline { display: inline-block; animation: spin .7s linear infinite; }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth">
+  <div class="acard">
+    <div class="alogo">
+      <div class="alogo-ico">⚡</div>
+      <h1>Elysian Chat</h1>
+      <p>เชื่อมต่อ • พูดคุย • สร้างชุมชน</p>
+    </div>
+    <div class="atabs">
+      <button class="atab on" id="tab-li" onclick="swTab('li')">เข้าสู่ระบบ</button>
+      <button class="atab"    id="tab-su" onclick="swTab('su')">สมัครสมาชิก</button>
+    </div>
+    <div id="aerr" class="aerr"></div>
+    <div id="frm-li">
+      <div class="field"><label>อีเมล</label><input type="email" id="li-em" placeholder="your@email.com" autocomplete="email"/></div>
+      <div class="field"><label>รหัสผ่าน</label><input type="password" id="li-pw" placeholder="••••••••" autocomplete="current-password"/></div>
+      <button class="btn-pr" id="btn-li" onclick="doLogin()">เข้าสู่ระบบ</button>
+      <div class="divider">หรือ</div>
+      <button class="btn-g" onclick="doGoogle()">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.5 2.5 30.1 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.8 6c1.8-5.4 6.9-9.8 13.5-9.8z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.2-.4-4.7H24v8.9h12.7c-.5 2.9-2.2 5.3-4.7 6.9l7.3 5.7c4.3-3.9 6.7-9.7 6.7-16.8z"/><path fill="#FBBC05" d="M10.5 28.7A14.4 14.4 0 0 1 9.5 24c0-1.7.3-3.3.9-4.7l-7.8-6C.9 16 0 19.9 0 24s.9 8 2.6 11.4l7.9-6.7z"/><path fill="#34A853" d="M24 48c6.1 0 11.2-2 14.9-5.4l-7.3-5.7c-2 1.3-4.6 2.1-7.6 2.1-6.5 0-12-4.4-14-10.3l-7.9 6.7C6.6 42.6 14.6 48 24 48z"/></svg>
+        เข้าสู่ระบบด้วย Google
+      </button>
+    </div>
+    <div id="frm-su" style="display:none">
+      <div class="field"><label>ชื่อที่แสดง</label><input type="text" id="su-nm" placeholder="ชื่อของคุณ" maxlength="32"/></div>
+      <div class="field"><label>อีเมล</label><input type="email" id="su-em" placeholder="your@email.com" autocomplete="email"/></div>
+      <div class="field"><label>รหัสผ่าน (อย่างน้อย 6 ตัว)</label><input type="password" id="su-pw" placeholder="••••••••" autocomplete="new-password"/></div>
+      <button class="btn-pr" id="btn-su" onclick="doSignup()">สร้างบัญชี</button>
+      <div class="divider">หรือ</div>
+      <button class="btn-g" onclick="doGoogle()">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.5 2.5 30.1 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.8 6c1.8-5.4 6.9-9.8 13.5-9.8z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.2-.4-4.7H24v8.9h12.7c-.5 2.9-2.2 5.3-4.7 6.9l7.3 5.7c4.3-3.9 6.7-9.7 6.7-16.8z"/><path fill="#FBBC05" d="M10.5 28.7A14.4 14.4 0 0 1 9.5 24c0-1.7.3-3.3.9-4.7l-7.8-6C.9 16 0 19.9 0 24s.9 8 2.6 11.4l7.9-6.7z"/><path fill="#34A853" d="M24 48c6.1 0 11.2-2 14.9-5.4l-7.3-5.7c-2 1.3-4.6 2.1-7.6 2.1-6.5 0-12-4.4-14-10.3l-7.9 6.7C6.6 42.6 14.6 48 24 48z"/></svg>
+        สมัครด้วย Google
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <div class="rail">
+    <div class="rail-logo" title="Elysian Chat">⚡</div>
+    <div class="rail-sep"></div>
+    <div class="rail-btn" title="สร้างห้องใหม่" onclick="openRM()">＋</div>
+    <div style="flex:1"></div>
+    <div class="rail-btn" title="ออกจากระบบ" onclick="doLogout()">🚪</div>
+  </div>
+
+  <div class="sb">
+    <div class="sb-head">
+      <span class="sb-title">Elysian</span>
+      <button class="btn-nr" onclick="openRM()">＋</button>
+    </div>
+    <div class="rl">ช่องทั้งหมด</div>
+    <div class="rlist" id="rlist">
+      <div style="padding:8px 6px;display:flex;flex-direction:column;gap:6px">
+        <div class="sk" style="height:36px;border-radius:8px"></div>
+        <div class="sk" style="height:36px;border-radius:8px"></div>
+        <div class="sk" style="height:36px;border-radius:8px"></div>
+      </div>
+    </div>
+    <div class="ubar">
+      <div class="uav" id="uav">U</div>
+      <div class="uinfo">
+        <div class="uname"  id="ub-n">—</div>
+        <div class="uemail" id="ub-e">—</div>
+      </div>
+      <button class="btn-lo" onclick="doLogout()" title="ออกจากระบบ">🚪</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="empty" id="noroom">
+      <div class="empty-ic">⚡</div>
+      <div class="empty-t">ยินดีต้อนรับ!</div>
+      <div class="empty-s">เลือกห้องทางซ้าย หรือสร้างห้องใหม่ได้เลย</div>
+      <button class="bm pr" style="margin-top:8px" onclick="openRM()">+ สร้างห้องแรก</button>
+    </div>
+
+    <div id="chatv" style="display:none;flex-direction:column;height:100%">
+      <div class="ch">
+        <span class="ch-em" id="ch-em">💬</span>
+        <div class="chi">
+          <div class="ch-n" id="ch-n">—</div>
+          <div class="ch-d" id="ch-d"></div>
+        </div>
+        <div class="wsbadge">
+          <div class="wsdot" id="wsd"></div>
+          <span id="wsl">กำลังเชื่อมต่อ</span>
+        </div>
+      </div>
+
+      <div id="msgs"></div>
+
+      <div class="iarea">
+        <div id="reply-bar" style="display:none"></div>
+        <div class="ibox" id="ibox">
+          <button class="up-btn" onclick="document.getElementById('pdfin').click()" title="แนบ PDF">📎</button>
+          <input type="file" id="pdfin" accept=".pdf" style="display:none" onchange="uploadPDF(this)"/>
+          <button class="voice-toolbar-btn" onclick="openVoiceCall()" title="Voice Recording 🎙️">🎙️</button>
+          <textarea id="txtin" rows="1" placeholder="ส่งข้อความ..."></textarea>
+          <button id="sndbtn" onclick="sendMsg()" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+        <div class="ihint">Enter ส่ง · Shift+Enter ขึ้นบรรทัด · 📎 PDF · 🎙️ Voice · <strong style="color:var(--acs)">#baikao</strong> ถาม AI</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Room Modal -->
+<div class="ov" id="rmov">
+  <div class="modal">
+    <div class="mtitle"><span id="rmic">＋</span><span id="rmt">สร้างห้องใหม่</span></div>
+    <div class="mlbl">ชื่อห้อง</div>
+    <input class="minput" id="rm-n" placeholder="เช่น general, random" maxlength="32"/>
+    <div class="mlbl">คำอธิบาย (ไม่บังคับ)</div>
+    <input class="minput" id="rm-d" placeholder="ห้องนี้ใช้สำหรับ..." maxlength="120"/>
+    <div class="mlbl">ไอคอน</div>
+    <div class="epick" id="epick"></div>
+    <div class="togrow" onclick="togPriv()">
+      <div>
+        <div style="font-size:.88rem;color:var(--t2)">🔒 ห้องส่วนตัว</div>
+        <div style="font-size:.72rem;color:var(--t4);margin-top:2px">แสดง lock icon บนชื่อห้อง</div>
+      </div>
+      <div class="togsw" id="privtog"></div>
+    </div>
+    <div class="macts">
+      <button class="bm gh" onclick="closeOv('rmov')">ยกเลิก</button>
+      <button class="bm pr" id="rm-sub" onclick="subRoom()">สร้างห้อง</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Room -->
+<div class="ov" id="drmov">
+  <div class="modal">
+    <div class="cfmic">🗑️</div>
+    <div class="mtitle" style="justify-content:center">ลบห้องนี้?</div>
+    <div class="cfmt">ต้องการลบห้อง <span class="cfmh" id="drm-n"></span>?<br/>ข้อความและไฟล์ทั้งหมดจะ<span class="cfmh">ถูกลบถาวร</span></div>
+    <div class="macts" style="justify-content:center">
+      <button class="bm gh" onclick="closeOv('drmov')">ยกเลิก</button>
+      <button class="bm dl" onclick="confDelRoom()">ลบถาวร</button>
+    </div>
+  </div>
+</div>
+
+<!-- PDF Viewer -->
+<div id="pdfov">
+  <div class="pdf-toolbar">
+    <span style="font-size:20px">📄</span>
+    <span class="pdf-toolbar-name" id="pdf-title">document.pdf</span>
+    <button class="pdf-dl-btn" id="pdf-dl-btn">⬇ ดาวน์โหลด</button>
+    <button class="pdf-close-btn" onclick="closePDF()">✕ ปิด</button>
+  </div>
+  <iframe id="pdfframe" src=""></iframe>
+</div>
+
+<!-- VOICE CALL -->
+<div id="voiceov">
+  <div class="vc-phase vc-calling active" id="vc-p1">
+    <div class="vc-avatar-wrap" id="vc-avatar">💬</div>
+    <div class="vc-room-label" id="vc-room-label">ห้อง</div>
+    <div class="vc-call-status">Elysian Chat · Voice</div>
+    <div class="vc-dots"><span></span><span></span><span></span></div>
+    <div class="vc-call-btns">
+      <div class="btn-wrap">
+        <button class="vc-btn-circle vc-btn-decline" onclick="closeVoiceCall()">📵</button>
+        <span>ปิด</span>
+      </div>
+      <div class="btn-wrap">
+        <button class="vc-btn-circle vc-btn-answer" onclick="vcAnswer()">📞</button>
+        <span>รับสาย</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="vc-phase vc-incall" id="vc-p2">
+    <div class="vc-incall-avatar" id="vc-incall-avatar">💬</div>
+    <div class="vc-incall-name"   id="vc-incall-name">ห้อง</div>
+    <div class="vc-incall-status">กำลังต่อสาย</div>
+    <div class="vc-rec-badge"><span class="vc-rec-dot"></span> บันทึกอยู่</div>
+    <div class="vc-timer-big" id="vc-timer">00:00</div>
+    <div class="vc-wave" id="vc-wave"></div>
+    <div class="vc-ctrl-row">
+      <div class="vc-ctrl-wrap">
+        <button class="vc-btn-ctrl" id="vc-mute-btn" onclick="vcToggleMute()">🎙️</button>
+        <span id="vc-mute-lbl">ไมค์เปิด</span>
+      </div>
+    </div>
+    <button class="vc-btn-hangup" onclick="vcHangup()" title="วางสาย">📵</button>
+  </div>
+
+  <div class="vc-phase vc-summary" id="vc-p3">
+    <span class="vc-ended-icon">📞</span>
+    <div class="vc-ended-title">สิ้นสุดการสนทนา</div>
+    <div class="vc-ended-room" id="vc-ended-room">#ห้อง</div>
+    <div class="vc-stats">
+      <div class="vc-stat"><span class="vc-stat-val" id="vc-stat-dur">0:00</span><span class="vc-stat-lbl">ระยะเวลา</span></div>
+      <div class="vc-stat"><span class="vc-stat-val" id="vc-stat-min">0</span><span class="vc-stat-lbl">นาที</span></div>
+      <div class="vc-stat"><span class="vc-stat-val" id="vc-stat-words">—</span><span class="vc-stat-lbl">คำ (ประมาณ)</span></div>
+    </div>
+    <div class="vc-transcript-wrap">
+      <div class="vc-transcript-label">📝 transcript <span id="vc-transcript-status" style="font-weight:400;color:var(--t4);text-transform:none;letter-spacing:0"></span></div>
+      <div class="vc-transcript-box loading" id="vc-transcript-box"><span class="vc-spin-inline">⏳</span> กำลังถอดเสียง...</div>
+    </div>
+    <div class="vc-proc" id="vc-proc"><span class="vc-spin-inline">⏳</span> กำลังประมวลผล...</div>
+    <div class="vc-summary-acts">
+      <button class="vc-sum-btn ai"   id="vc-btn-ai"   onclick="vcAiSummary()" disabled>🤖 ให้ AI สรุปการสนทนา</button>
+      <button class="vc-sum-btn send" id="vc-btn-send" onclick="vcSendTranscript()" disabled>📤 ส่ง transcript เข้าห้อง</button>
+      <button class="vc-sum-btn close" onclick="closeVoiceCall()">✕ ปิด</button>
+    </div>
+  </div>
+</div>
+
+<div class="twrap" id="twrap"></div>
+
+<script>
+const API     = 'http://localhost:3000';
+const WS_URL  = 'ws://localhost:3000/ws';
+const STT_URL = 'http://localhost:5001';
+const VC_BARS = 20;
+
+let curUser    = null;
+let idToken    = null;
+let myProf     = null;
+let rooms      = [];
+let curRoom    = null;
+let ws         = null;
+let editRmId   = null;
+let delRmId    = null;
+let selEmoji   = '💬';
+let isPriv     = false;
+let editMsgId  = null;
+let curPdfUrl  = null;
+let replyingTo = null;
+
+// ══════════════════════════════════════════════════════
+// FIREBASE — รอ fb-ready แล้วจึง init
+// ══════════════════════════════════════════════════════
+window.addEventListener('fb-ready', () => {
+  window.__onAuth(async (user) => {
+    if (user) {
+      curUser = user;
+
+      // ✅ FIX: รอ token ก่อน แล้วค่อย sync profile และโหลดข้อมูล
+      try {
+        idToken = await window.__getToken(user);
+      } catch (err) {
+        console.error('Token error:', err);
+        showAErr('ไม่สามารถดึง token ได้ กรุณาเข้าสู่ระบบใหม่');
+        await window.__signOut();
+        return;
+      }
+
+      // ตั้ง timer refresh token ทุก 55 นาที
+      scheduleTokenRefresh();
+
+      await syncProf();
+      showApp();
+    } else {
+      curUser = idToken = myProf = null;
+      showAuth();
+    }
+  });
+});
+
+// ✅ FIX: แยก token refresh เป็น function ชัดเจน
+function scheduleTokenRefresh() {
+  setTimeout(async () => {
+    try {
+      if (curUser) {
+        idToken = await window.__getToken(curUser);
+        console.log('🔑 Token refreshed');
+      }
+    } catch (err) {
+      console.warn('Token refresh failed:', err);
+    }
+    scheduleTokenRefresh();
+  }, 55 * 60 * 1000);
+}
+
+const AH = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` });
+
+// ══════════════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════════════
+async function doLogin() {
+  const e = document.getElementById('li-em').value.trim();
+  const p = document.getElementById('li-pw').value;
+  if (!e || !p) return showAErr('กรุณากรอกอีเมลและรหัสผ่าน');
+  setALd(true);
+  try { await window.__signIn(e, p); }
+  catch (ex) { showAErr(fbErr(ex.code)); }
+  finally { setALd(false); }
+}
+
+async function doSignup() {
+  const nm = document.getElementById('su-nm').value.trim();
+  const e  = document.getElementById('su-em').value.trim();
+  const p  = document.getElementById('su-pw').value;
+  if (!nm || !e || !p) return showAErr('กรุณากรอกข้อมูลให้ครบ');
+  if (p.length < 6) return showAErr('รหัสผ่านต้องมีอย่างน้อย 6 ตัว');
+  setALd(true);
+  try {
+    const c = await window.__signUp(e, p);
+    await window.__updateProf(c.user, { displayName: nm });
+  }
+  catch (ex) { showAErr(fbErr(ex.code)); }
+  finally { setALd(false); }
+}
+
+async function doGoogle() {
+  try { await window.__googleSignIn(); }
+  catch (ex) { if (ex.code !== 'auth/popup-closed-by-user') showAErr(fbErr(ex.code)); }
+}
+
+async function doLogout() {
+  if (!confirm('ออกจากระบบ?')) return;
+  if (ws) ws.close();
+  await window.__signOut();
+}
+
+function fbErr(c) {
+  return ({
+    'auth/user-not-found':      'ไม่พบบัญชีนี้',
+    'auth/wrong-password':      'รหัสผ่านไม่ถูกต้อง',
+    'auth/email-already-in-use':'อีเมลนี้มีบัญชีอยู่แล้ว',
+    'auth/invalid-email':       'รูปแบบอีเมลไม่ถูกต้อง',
+    'auth/weak-password':       'รหัสผ่านอ่อนเกินไป',
+    'auth/too-many-requests':   'ลองใหม่ภายหลัง',
+    'auth/invalid-credential':  'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
+  })[c] || `เกิดข้อผิดพลาด (${c})`;
+}
+
+function showAErr(m) {
+  const el = document.getElementById('aerr');
+  el.textContent = m;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 5000);
+}
+function setALd(on) {
+  document.getElementById('btn-li').disabled = on;
+  document.getElementById('btn-su').disabled = on;
+}
+function swTab(t) {
+  document.getElementById('frm-li').style.display = t === 'li' ? '' : 'none';
+  document.getElementById('frm-su').style.display = t === 'su' ? '' : 'none';
+  document.getElementById('tab-li').classList.toggle('on', t === 'li');
+  document.getElementById('tab-su').classList.toggle('on', t === 'su');
+  document.getElementById('aerr').classList.remove('show');
+}
+function showAuth() {
+  document.getElementById('auth').style.display = 'flex';
+  document.getElementById('app').classList.remove('vis');
+}
+// ✅ FIX: showApp ไม่ต้องรับ token แล้ว (idToken set ก่อนแล้ว)
+function showApp() {
+  document.getElementById('auth').style.display = 'none';
+  document.getElementById('app').classList.add('vis');
+  updUbar();
+  connectWS();
+  loadRooms();
+  setupTA();
+}
+
+// ══════════════════════════════════════════════════════
+// PROFILE
+// ══════════════════════════════════════════════════════
+async function syncProf() {
+  try {
+    const r = await fetch(`${API}/auth/me`, { method: 'POST', headers: AH() });
+    if (!r.ok) throw new Error(`${r.status}`);
+    myProf = await r.json();
+  } catch (err) {
+    console.warn('syncProf fallback:', err);
+    myProf = {
+      displayName: curUser.displayName || curUser.email?.split('@')[0] || 'User',
+      photoURL: curUser.photoURL || '',
+      email: curUser.email,
+    };
+  }
+}
+
+function updUbar() {
+  const nm  = myProf?.displayName || curUser?.displayName || 'User';
+  const em  = curUser?.email || '';
+  const ph  = myProf?.photoURL || curUser?.photoURL || '';
+  const ini = nm[0]?.toUpperCase() || 'U';
+  document.getElementById('ub-n').textContent = nm;
+  document.getElementById('ub-e').textContent = em;
+  const av = document.getElementById('uav');
+  av.innerHTML = ph ? `<img src="${ph}" alt="${ini}" onerror="this.parentNode.innerHTML='${ini}'">` : ini;
+}
+
+// ══════════════════════════════════════════════════════
+// WEBSOCKET
+// ══════════════════════════════════════════════════════
+function connectWS() {
+  ws = new WebSocket(WS_URL);
+  ws.onopen  = () => setWS(true);
+  ws.onclose = () => { setWS(false); setTimeout(connectWS, 3000); };
+  ws.onerror = () => setWS(false);
+  ws.onmessage = (e) => {
+    const d = JSON.parse(e.data);
+    if (d.type === 'new_message'    && d.message.roomId === curRoom) appendMsg(d.message);
+    if (d.type === 'edit_message'   && d.message.roomId === curRoom) updMsgDOM(d.message);
+    if (d.type === 'delete_message') document.getElementById(`mg-${d.id}`)?.remove();
+    if (d.type === 'room_created')  { rooms.push(d.room); renderRooms(); }
+    if (d.type === 'room_updated')  { rooms = rooms.map(r => r.id === d.room.id ? d.room : r); renderRooms(); if (curRoom === d.room.id) updHdr(d.room); }
+    if (d.type === 'room_deleted')  { rooms = rooms.filter(r => r.id !== d.roomId); renderRooms(); if (curRoom === d.roomId) showNoRoom(); }
+    if (d.type === 'pdf_renamed')   {
+      // อัปเดต PDF card ชื่อไฟล์จาก WS broadcast
+      const nameEl = document.querySelector(`#mg-${d.msgId} .pdf-name`);
+      if (nameEl) nameEl.textContent = d.newFilename;
+    }
+  };
+}
+function setWS(on) {
+  document.getElementById('wsd').classList.toggle('on', on);
+  document.getElementById('wsl').textContent = on ? 'เชื่อมต่อแล้ว' : 'ออฟไลน์';
+}
+
+// ══════════════════════════════════════════════════════
+// ROOMS
+// ══════════════════════════════════════════════════════
+async function loadRooms() {
+  try {
+    const r = await fetch(`${API}/rooms`, { headers: AH() });
+    if (!r.ok) throw new Error(`${r.status}`);
+    const d = await r.json();
+    rooms = d.rooms || [];
+    renderRooms();
+  } catch (err) {
+    console.error('loadRooms:', err);
+    document.getElementById('rlist').innerHTML = '<div style="padding:12px;font-size:.8rem;color:var(--dn)">❌ โหลดไม่ได้</div>';
+  }
+}
+
+function renderRooms() {
+  const el  = document.getElementById('rlist');
+  const uid = curUser?.uid;
+  if (!rooms.length) {
+    el.innerHTML = `<div style="padding:16px 8px;text-align:center;color:var(--t4);font-size:.82rem">ยังไม่มีห้อง<br/><button onclick="openRM()" style="margin-top:8px;background:var(--acd);color:var(--acs);border:none;padding:5px 12px;border-radius:6px;font-size:.8rem;cursor:pointer">+ สร้างห้องแรก</button></div>`;
+    return;
+  }
+  el.innerHTML = rooms.map(r => {
+    const own = r.createdBy === uid;
+    return `<div class="ri ${r.id === curRoom ? 'on' : ''}" id="ri-${r.id}" onclick="selRoom('${r.id}')">
+      <span class="ri-em">${r.emoji || '💬'}</span>
+      <span class="ri-name">${esc(r.name)}</span>
+      ${r.isPrivate ? '<span style="font-size:11px;color:var(--t4)">🔒</span>' : ''}
+      ${own ? `<div class="ri-acts" onclick="event.stopPropagation()">
+        <button class="ri-btn" onclick="openEditRM('${r.id}')" title="แก้ไข">✏️</button>
+        <button class="ri-btn d" onclick="openDelRM('${r.id}')" title="ลบ">🗑</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function selRoom(id) {
+  if (curRoom === id) return;
+  curRoom = id;
+  cancelReply();
+  const r = rooms.find(x => x.id === id);
+  document.querySelectorAll('.ri').forEach(el => el.classList.remove('on'));
+  document.getElementById(`ri-${id}`)?.classList.add('on');
+  document.getElementById('noroom').style.display = 'none';
+  const cv = document.getElementById('chatv');
+  cv.style.display = 'flex';
+  updHdr(r);
+  document.getElementById('sndbtn').disabled = false;
+  document.getElementById('txtin').placeholder = `ส่งข้อความใน #${r?.name}`;
+  await loadMsgs(id);
+}
+
+function updHdr(r) {
+  document.getElementById('ch-em').textContent = r?.emoji || '💬';
+  document.getElementById('ch-n').textContent  = r?.name  || '';
+  document.getElementById('ch-d').textContent  = r?.description || '';
+}
+function showNoRoom() {
+  curRoom = null;
+  cancelReply();
+  document.getElementById('noroom').style.display  = 'flex';
+  document.getElementById('chatv').style.display   = 'none';
+  renderRooms();
+}
+
+function openRM() {
+  editRmId = null; selEmoji = '💬'; isPriv = false;
+  document.getElementById('rmic').textContent     = '＋';
+  document.getElementById('rmt').textContent      = 'สร้างห้องใหม่';
+  document.getElementById('rm-sub').textContent   = 'สร้างห้อง';
+  document.getElementById('rm-n').value           = '';
+  document.getElementById('rm-d').value           = '';
+  document.getElementById('privtog').classList.remove('on');
+  renderEP(); openOv('rmov');
+}
+function openEditRM(id) {
+  const r = rooms.find(x => x.id === id); if (!r) return;
+  editRmId = id; selEmoji = r.emoji || '💬'; isPriv = r.isPrivate || false;
+  document.getElementById('rmic').textContent     = '✏️';
+  document.getElementById('rmt').textContent      = 'แก้ไขห้อง';
+  document.getElementById('rm-sub').textContent   = 'บันทึก';
+  document.getElementById('rm-n').value           = r.name;
+  document.getElementById('rm-d').value           = r.description || '';
+  document.getElementById('privtog').classList.toggle('on', isPriv);
+  renderEP(); openOv('rmov');
+}
+function renderEP() {
+  const ems = ['💬','🔥','🎮','💻','🎵','📢','🌐','🎲','🚀','🎨','📚','🏆','⚡','🌙','🦄'];
+  document.getElementById('epick').innerHTML = ems.map(e =>
+    `<div class="eopt ${e === selEmoji ? 'sel' : ''}" onclick="pickE('${e}')">${e}</div>`
+  ).join('');
+}
+function pickE(e) { selEmoji = e; renderEP(); }
+function togPriv() { isPriv = !isPriv; document.getElementById('privtog').classList.toggle('on', isPriv); }
+
+async function subRoom() {
+  const n = document.getElementById('rm-n').value.trim();
+  const d = document.getElementById('rm-d').value.trim();
+  if (!n) { toast('กรุณากรอกชื่อห้อง', 'er'); return; }
+  try {
+    const url = editRmId ? `${API}/rooms/${editRmId}` : `${API}/rooms`;
+    const res = await fetch(url, {
+      method: editRmId ? 'PATCH' : 'POST', headers: AH(),
+      body: JSON.stringify({ name: n, description: d, emoji: selEmoji, isPrivate: isPriv }),
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'เกิดข้อผิดพลาด', 'er'); return; }
+    closeOv('rmov');
+    toast(editRmId ? `แก้ไขห้อง "${n}" แล้ว ✅` : `สร้างห้อง "${n}" แล้ว ✅`, 'ok');
+    if (!editRmId) setTimeout(() => { const r = rooms.find(x => x.name === n); if (r) selRoom(r.id); }, 400);
+  } catch { toast('❌ เชื่อมต่อ server ไม่ได้', 'er'); }
+}
+
+function openDelRM(id) {
+  delRmId = id;
+  const r = rooms.find(x => x.id === id);
+  document.getElementById('drm-n').textContent = `"${r?.emoji || ''} ${r?.name}"`;
+  openOv('drmov');
+}
+async function confDelRoom() {
+  if (!delRmId) return;
+  try {
+    const res = await fetch(`${API}/rooms/${delRmId}`, { method: 'DELETE', headers: AH() });
+    if (!res.ok) { const d = await res.json(); toast(d.error || 'ลบไม่ได้', 'er'); return; }
+    closeOv('drmov'); toast('ลบห้องแล้ว', 'ok'); delRmId = null;
+  } catch { toast('❌ ลบไม่ได้', 'er'); }
+}
+
+// ══════════════════════════════════════════════════════
+// MESSAGES
+// ══════════════════════════════════════════════════════
+async function loadMsgs(rid) {
+  const box = document.getElementById('msgs');
+  box.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px;padding:8px 0">${
+    Array(5).fill(`<div style="display:flex;gap:12px;padding:4px 6px"><div class="sk" style="width:36px;height:36px;border-radius:50%;flex-shrink:0"></div><div style="flex:1;display:flex;flex-direction:column;gap:6px;padding-top:4px"><div class="sk" style="height:12px;width:120px"></div><div class="sk" style="height:14px;width:75%"></div></div></div>`).join('')
+  }</div>`;
+  try {
+    const res = await fetch(`${API}/rooms/${rid}/messages`, { headers: AH() });
+    if (!res.ok) throw new Error(`${res.status}`);
+    const d = await res.json();
+    box.innerHTML = '';
+    if (!d.messages?.length) {
+      box.innerHTML = `<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--t4);font-size:.85rem;padding:40px;text-align:center">เริ่มต้นบทสนทนาในห้องนี้ได้เลย! 👋</div>`;
+      return;
+    }
+    let lastD = '';
+    d.messages.forEach(msg => {
+      const dt = msg.createdAt ? new Date(msg.createdAt) : new Date();
+      const ds = dt.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      if (ds !== lastD) {
+        lastD = ds;
+        const dv = document.createElement('div');
+        dv.className = 'ddiv'; dv.textContent = ds;
+        box.appendChild(dv);
+      }
+      appendMsg(msg, false);
+    });
+    scrollB();
+  } catch (err) {
+    box.innerHTML = `<div style="padding:20px;color:var(--dn);text-align:center">❌ โหลดข้อความไม่ได้</div>`;
+    console.error(err);
+  }
+}
+
+function appendMsg(msg, scroll = true) {
+  const box = document.getElementById('msgs'); if (!box) return;
+  const isBot   = msg.uid === 'baikao-bot' || msg.isBot;
+  const isVoice = msg.isVoice;
+  const mine    = !isBot && msg.uid === curUser?.uid;
+  const d  = msg.createdAt ? new Date(msg.createdAt) : new Date();
+  const tm = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+  const nm = msg.username || 'Unknown';
+  const ini = nm[0]?.toUpperCase() || '?';
+  const cols = ['#4f46e5','#0ea5e9','#f97316','#ec4899','#10b981','#f59e0b','#8b5cf6'];
+  const ci   = nm.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % cols.length;
+  const div  = document.createElement('div');
+  div.className = 'mg'; div.id = `mg-${msg.id}`;
+
+  const avStyle = isBot ? 'background:#065f46' : `background:${cols[ci]}`;
+  const avInner = isBot ? '🤖' : (msg.photoURL ? `<img src="${esc(msg.photoURL)}" alt="${ini}" onerror="this.parentNode.innerHTML='${ini}'">` : ini);
+  const unClass = isBot ? 'bot' : (isVoice ? 'voice-user' : (mine ? 'me' : ''));
+
+  let replyHtml = '';
+  if (msg.replyTo) {
+    const rt = msg.replyTo;
+    const rtText = rt.isPdfMsg ? `📄 ${rt.filename || 'file.pdf'}` : rt.text;
+    replyHtml = `<div class="msg-reply-ref" onclick="scrollToMsg('${esc(rt.id)}')">
+      <div class="msg-reply-ref-name">↩️ ${esc(rt.username)}</div>
+      <div class="msg-reply-ref-text">${esc(rtText)}</div>
+    </div>`;
+  }
+
+  let bodyHtml;
+  if (msg.isPdfMsg && msg.fileId) {
+    const sizeMB = msg.fileSize ? (msg.fileSize / 1024 / 1024).toFixed(2) + ' MB' : '';
+    bodyHtml = `<div class="pdf-card">
+      <div class="pdf-ico" onclick="openPDF('${esc(msg.fileId)}','${esc(msg.filename||'document.pdf')}')" style="cursor:pointer">📄</div>
+      <div class="pdf-info" onclick="openPDF('${esc(msg.fileId)}','${esc(msg.filename||'document.pdf')}')" style="cursor:pointer">
+        <div class="pdf-name">${esc(msg.filename || 'document.pdf')}</div>
+        <div class="pdf-meta">${sizeMB}</div>
+        ${msg.hasText ? '<div class="pdf-ai">🤖 Baikao อ่านได้</div>' : ''}
+        <div class="pdf-open-hint">👆 คลิกเพื่อเปิดดู</div>
+      </div>
+      ${(msg.hasText && msg.uid === curUser?.uid) ? `
+      <button class="pdf-rename-btn" onclick="aiRenamePdf('${esc(msg.fileId)}','${esc(msg.id)}')" title="ให้ AI ตั้งชื่อใหม่">✨</button>` : ''}
+    </div>`;
+  } else if (isVoice && msg.transcript) {
+    const durSec = msg.duration_ms ? Math.round(msg.duration_ms / 1000) : 0;
+    bodyHtml = `<div class="msg-voice-bubble">
+      <div class="msg-voice-header">🎙️ Voice${durSec ? ` · ${durSec}s` : ''}</div>
+      <div id="mt-${msg.id}">${esc(msg.transcript)}</div>
+    </div>`;
+  } else {
+    const txtClass = isBot ? 'msg-bot-bubble' : 'mtxt';
+    bodyHtml = `<div class="${txtClass}" id="mt-${msg.id}">${esc(msg.text)}</div>`;
+  }
+
+  div.innerHTML = `
+    <div class="mav" style="${avStyle}">${avInner}</div>
+    <div class="mb">
+      <div class="mmeta">
+        <span class="mun ${unClass}">${esc(nm)}</span>
+        <span class="mt2">${tm}</span>
+        ${msg.edited ? '<span class="medt">(แก้ไขแล้ว)</span>' : ''}
+      </div>
+      ${replyHtml}
+      ${bodyHtml}
+    </div>
+    <div class="mha">
+      <button class="hb" onclick='startReply(JSON.parse(decodeURIComponent("${
+        encodeURIComponent(JSON.stringify({
+          id: msg.id,
+          username: msg.username || '',
+          text: msg.isPdfMsg ? `📄 ${msg.filename || 'file.pdf'}` : (msg.text || ''),
+          isPdfMsg: msg.isPdfMsg || false,
+          filename: msg.filename || null,
+          fileId: msg.fileId || null,
+        }))
+      }")))'  title="ตอบกลับ">↩️</button>
+      ${(!isBot && mine && !msg.isPdfMsg && !isVoice) ? `
+        <button class="hb" onclick="startEdit('${msg.id}',decodeURIComponent('${encodeURIComponent(msg.text || '')}'))" title="แก้ไข">✏️</button>
+        <button class="hb d" onclick="delMsg('${msg.id}')" title="ลบ">🗑</button>
+      ` : ''}
+    </div>`;
+
+  box.appendChild(div);
+  if (scroll) scrollB();
+}
+
+function updMsgDOM(msg) {
+  const el = document.getElementById(`mt-${msg.id}`); if (!el) return;
+  el.innerHTML = esc(msg.text); cancelEdit(msg.id);
+  const meta = document.querySelector(`#mg-${msg.id} .mmeta`);
+  if (meta && !meta.querySelector('.medt')) {
+    const sp = document.createElement('span');
+    sp.className = 'medt'; sp.textContent = '(แก้ไขแล้ว)';
+    meta.appendChild(sp);
+  }
+}
+
+function scrollToMsg(id) {
+  const el = document.getElementById(`mg-${id}`); if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.classList.add('highlighted');
+  setTimeout(() => el.classList.remove('highlighted'), 1500);
+}
+
+// ══════════════════════════════════════════════════════
+// REPLY
+// ══════════════════════════════════════════════════════
+function startReply(msgObj) {
+  replyingTo = msgObj;
+  const bar  = document.getElementById('reply-bar');
+  bar.style.display = 'flex';
+  bar.className     = 'reply-bar';
+  bar.innerHTML = `
+    <span class="reply-bar-label">↩️ ตอบกลับ</span>
+    <span class="reply-bar-name">@${esc(replyingTo.username)}</span>
+    <span class="reply-bar-text">${esc(replyingTo.text)}</span>
+    <div class="reply-bar-x" onclick="cancelReply()" title="ยกเลิก">✕</div>
+  `;
+  document.getElementById('ibox').classList.add('has-reply');
+  document.getElementById('txtin').focus();
+}
+
+function cancelReply() {
+  replyingTo = null;
+  const bar  = document.getElementById('reply-bar');
+  if (bar) { bar.style.display = 'none'; bar.innerHTML = ''; }
+  document.getElementById('ibox')?.classList.remove('has-reply');
+}
+
+// ══════════════════════════════════════════════════════
+// SEND
+// ══════════════════════════════════════════════════════
+async function sendMsg() {
+  const ta = document.getElementById('txtin');
+  const tx = ta.value.trim();
+  if (!tx || !curRoom) return;
+  ta.value = ''; autoR(ta);
+  document.getElementById('sndbtn').disabled = true;
+
+  const reply = replyingTo;
+  cancelReply();
+
+  const baikaoMatch = tx.match(/^#baikao\s+(.+)/si);
+  if (baikaoMatch) {
+    const question    = baikaoMatch[1].trim();
+    const displayName = myProf?.displayName || curUser?.displayName || 'User';
+    appendMsg({
+      id: `q-${Date.now()}`, roomId: curRoom, uid: curUser?.uid,
+      username: displayName, photoURL: myProf?.photoURL || curUser?.photoURL || '',
+      text: tx, edited: false, replyTo: reply, createdAt: new Date().toISOString(),
+    });
+    try {
+      await fetch(`${API}/rooms/${curRoom}/baikao`, {
+        method: 'POST', headers: AH(),
+        body: JSON.stringify({ question, displayName, replyTo: reply }),
+      });
+    } catch { toast('❌ Baikao ไม่ตอบสนอง', 'er'); }
+    document.getElementById('sndbtn').disabled = false; ta.focus();
+    return;
+  }
+
+  try {
+    await fetch(`${API}/rooms/${curRoom}/messages`, {
+      method: 'POST', headers: AH(),
+      body: JSON.stringify({
+        text: tx,
+        displayName: myProf?.displayName || curUser?.displayName || 'User',
+        photoURL: myProf?.photoURL || curUser?.photoURL || '',
+        replyTo: reply,
+      }),
+    });
+  } catch { toast('❌ ส่งข้อความไม่ได้', 'er'); }
+  document.getElementById('sndbtn').disabled = false; ta.focus();
+}
+
+// ══════════════════════════════════════════════════════
+// PDF UPLOAD
+// ══════════════════════════════════════════════════════
+async function uploadPDF(input) {
+  const file = input.files[0]; if (!file) return;
+  if (!curRoom) { toast('เลือกห้องก่อนอัพโหลด', 'er'); input.value = ''; return; }
+  if (!file.name.toLowerCase().endsWith('.pdf')) { toast('รองรับเฉพาะไฟล์ .pdf', 'er'); input.value = ''; return; }
+  if (file.size > 20 * 1024 * 1024) { toast('ไฟล์ใหญ่เกิน 20MB', 'er'); input.value = ''; return; }
+  input.value = '';
+
+  const displayName = myProf?.displayName || curUser?.displayName || 'User';
+  const uploadId    = `up-${Date.now()}`;
+  const upDiv       = document.createElement('div');
+  upDiv.className   = 'mg'; upDiv.id = `mg-${uploadId}`;
+  upDiv.innerHTML   = `<div class="mav" style="background:#4f46e5">${displayName[0]?.toUpperCase() || 'U'}</div>
+    <div class="mb"><div class="mmeta"><span class="mun me">${esc(displayName)}</span></div>
+    <div class="up-prog"><div style="font-size:.82rem;color:var(--t2)">📤 กำลังอัพโหลด <strong>${esc(file.name)}</strong></div>
+    <div class="up-prog-bar"><div class="up-prog-fill"></div></div></div></div>`;
+  document.getElementById('msgs').appendChild(upDiv);
+  scrollB();
+
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('displayName', displayName);
+    const res  = await fetch(`${API}/rooms/${curRoom}/upload-pdf`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${idToken}` },
+      body: fd,
+    });
+    const data = await res.json();
+    upDiv.remove();
+    if (!res.ok) { toast(data.error || 'อัพโหลดไม่ได้', 'er'); return; }
+    toast(`✅ ${file.name} อัพโหลดสำเร็จ${data.hasText ? ' · Baikao อ่านได้แล้ว 🤖' : ''}`, 'ok');
+  } catch (e) { upDiv.remove(); toast('❌ อัพโหลดไม่ได้', 'er'); console.error(e); }
+}
+
+// ══════════════════════════════════════════════════════
+// PDF VIEWER
+// ══════════════════════════════════════════════════════
+async function openPDF(fileId, filename) {
+  toast('📄 กำลังโหลด PDF...', 'in');
+  try {
+    const res = await fetch(`${API}/files/${fileId}/pdf`, { headers: AH() });
+    if (!res.ok) { toast('❌ โหลด PDF ไม่ได้', 'er'); return; }
+    const data = await res.json();
+    if (curPdfUrl) URL.revokeObjectURL(curPdfUrl);
+    const blob = base64ToBlob(data.base64, 'application/pdf');
+    curPdfUrl  = URL.createObjectURL(blob);
+    document.getElementById('pdf-title').textContent = filename;
+    document.getElementById('pdfframe').src          = curPdfUrl;
+    document.getElementById('pdf-dl-btn').onclick    = () => {
+      const a = document.createElement('a'); a.href = curPdfUrl; a.download = filename; a.click();
+    };
+    document.getElementById('pdfov').classList.add('open');
+  } catch (e) { toast('❌ โหลด PDF ไม่ได้', 'er'); console.error(e); }
+}
+
+function closePDF() {
+  document.getElementById('pdfov').classList.remove('open');
+  document.getElementById('pdfframe').src = '';
+  if (curPdfUrl) { URL.revokeObjectURL(curPdfUrl); curPdfUrl = null; }
+}
+
+function base64ToBlob(b64, mime) {
+  const bin = atob(b64); const buf = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  return new Blob([buf], { type: mime });
+}
+
+// ══════════════════════════════════════════════════════
+// EDIT / DELETE
+// ══════════════════════════════════════════════════════
+function startEdit(id, tx) {
+  if (editMsgId && editMsgId !== id) cancelEdit(editMsgId);
+  editMsgId = id;
+  const el = document.getElementById(`mt-${id}`); if (!el) return;
+  el.style.display = 'none';
+  const ta = document.createElement('textarea');
+  ta.className = 'edta'; ta.id = `eta-${id}`;
+  ta.value = tx; ta.rows = Math.max(1, tx.split('\n').length);
+  ta.onkeydown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); subEdit(id); }
+    if (e.key === 'Escape') cancelEdit(id);
+  };
+  const acts = document.createElement('div');
+  acts.className = 'edacts'; acts.id = `eac-${id}`;
+  acts.innerHTML = `<button class="bx gh" onclick="cancelEdit('${id}')">ยกเลิก</button><button class="bx pr" onclick="subEdit('${id}')">บันทึก</button><button class="bx dl" onclick="delMsg('${id}')">🗑 ลบ</button>`;
+  el.parentNode.insertBefore(ta, el.nextSibling);
+  el.parentNode.insertBefore(acts, ta.nextSibling);
+  ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+
+function cancelEdit(id) {
+  document.getElementById(`eta-${id}`)?.remove();
+  document.getElementById(`eac-${id}`)?.remove();
+  const el = document.getElementById(`mt-${id}`); if (el) el.style.display = '';
+  if (editMsgId === id) editMsgId = null;
+}
+
+async function subEdit(id) {
+  const ta = document.getElementById(`eta-${id}`); if (!ta) return;
+  const tx = ta.value.trim(); if (!tx) return;
+  try {
+    const res = await fetch(`${API}/messages/${id}`, {
+      method: 'PATCH', headers: AH(), body: JSON.stringify({ text: tx }),
+    });
+    if (!res.ok) { const d = await res.json(); toast(d.error || 'แก้ไขไม่ได้', 'er'); }
+  } catch { toast('❌ แก้ไขไม่ได้', 'er'); }
+}
+
+async function delMsg(id) {
+  try {
+    const res = await fetch(`${API}/messages/${id}`, { method: 'DELETE', headers: AH() });
+    if (!res.ok) { const d = await res.json(); toast(d.error || 'ลบไม่ได้', 'er'); }
+  } catch { toast('❌ ลบไม่ได้', 'er'); }
+}
+
+// ══════════════════════════════════════════════════════
+// TEXTAREA AUTO-RESIZE
+// ══════════════════════════════════════════════════════
+function setupTA() {
+  const ta = document.getElementById('txtin');
+  ta.addEventListener('input', () => autoR(ta));
+  ta.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+  });
+}
+function autoR(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 140) + 'px'; }
+
+// ══════════════════════════════════════════════════════
+// AI RENAME PDF
+// ══════════════════════════════════════════════════════
+async function aiRenamePdf(fileId, msgId) {
+  const btn = document.querySelector(`#mg-${msgId} .pdf-rename-btn`);
+  if (btn) { btn.classList.add('loading'); btn.textContent = '⏳'; }
+  toast('✨ AI กำลังตั้งชื่อไฟล์...', 'in');
+  try {
+    const res  = await fetch(`${API}/files/${fileId}/rename`, { method: 'POST', headers: AH() });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'ตั้งชื่อไม่ได้', 'er'); return; }
+    toast(`✅ เปลี่ยนชื่อเป็น "${data.newName}"`, 'ok');
+    const nameEl = document.querySelector(`#mg-${msgId} .pdf-name`);
+    if (nameEl) nameEl.textContent = data.newName;
+  } catch (e) { toast('❌ เกิดข้อผิดพลาด', 'er'); console.error(e); }
+  finally { if (btn) { btn.classList.remove('loading'); btn.textContent = '✨'; } }
+}
+
+// ══════════════════════════════════════════════════════
+// VOICE CALL
+// ══════════════════════════════════════════════════════
+let vcStream     = null;
+let vcRecorder   = null;
+let vcChunks     = [];
+let vcAudioCtx   = null;
+let vcAnalyser   = null;
+let vcTimerID    = null;
+let vcWaveID     = null;
+let vcSecs       = 0;
+let vcMuted      = false;
+let vcTranscript = '';
+let vcBlob       = null;
+let vcCallRoom   = null;
+
+function vcShowPhase(n) {
+  ['vc-p1','vc-p2','vc-p3'].forEach((id, i) => {
+    document.getElementById(id).classList.toggle('active', i + 1 === n);
+  });
+}
+
+function openVoiceCall() {
+  if (!curRoom) { toast('เลือกห้องก่อน', 'er'); return; }
+  vcCallRoom = rooms.find(r => r.id === curRoom);
+  const emoji = vcCallRoom?.emoji || '💬';
+  const name  = vcCallRoom?.name  || curRoom;
+  document.getElementById('vc-avatar').textContent         = emoji;
+  document.getElementById('vc-incall-avatar').textContent  = emoji;
+  document.getElementById('vc-room-label').textContent     = `#${name}`;
+  document.getElementById('vc-incall-name').textContent    = `#${name}`;
+  document.getElementById('vc-ended-room').textContent     = `#${name}`;
+  vcShowPhase(1); vcInitBars();
+  document.getElementById('voiceov').classList.add('open');
+}
+
+function closeVoiceCall() {
+  vcHardStop();
+  document.getElementById('voiceov').classList.remove('open');
+  vcSecs = 0; vcMuted = false; vcTranscript = ''; vcBlob = null;
+  document.getElementById('vc-timer').textContent        = '00:00';
+  document.getElementById('vc-mute-btn').className       = 'vc-btn-ctrl';
+  document.getElementById('vc-mute-lbl').textContent     = 'ไมค์เปิด';
+  document.getElementById('vc-mute-btn').textContent     = '🎙️';
+  document.getElementById('vc-transcript-box').className = 'vc-transcript-box loading';
+  document.getElementById('vc-transcript-box').innerHTML = '<span class="vc-spin-inline">⏳</span> กำลังถอดเสียง...';
+  document.getElementById('vc-transcript-status').textContent = '';
+  document.getElementById('vc-btn-ai').disabled          = true;
+  document.getElementById('vc-btn-send').disabled        = true;
+  document.getElementById('vc-proc').classList.remove('show');
+  vcInitBars();
+}
+
+async function vcAnswer() {
+  try {
+    vcStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch {
+    toast('❌ ไม่สามารถเข้าถึงไมค์ได้', 'er'); return;
+  }
+  vcAudioCtx = new AudioContext();
+  const src  = vcAudioCtx.createMediaStreamSource(vcStream);
+  vcAnalyser = vcAudioCtx.createAnalyser();
+  vcAnalyser.fftSize = 64;
+  src.connect(vcAnalyser);
+
+  const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+  vcRecorder = new MediaRecorder(vcStream, { mimeType: mime });
+  vcChunks   = []; vcMuted = false;
+  vcRecorder.ondataavailable = e => { if (e.data.size > 0) vcChunks.push(e.data); };
+  vcRecorder.onstop = () => { vcBlob = new Blob(vcChunks, { type: mime }); vcDoTranscribe(); };
+  vcRecorder.start(300);
+
+  vcShowPhase(2); vcSecs = 0;
+  vcTimerID = setInterval(() => {
+    vcSecs++;
+    const m = String(Math.floor(vcSecs / 60)).padStart(2, '0');
+    const s = String(vcSecs % 60).padStart(2, '0');
+    document.getElementById('vc-timer').textContent = `${m}:${s}`;
+  }, 1000);
+
+  document.getElementById('vc-wave').classList.add('live');
+  vcWaveID = setInterval(() => {
+    if (!vcAnalyser) return;
+    const bars = document.querySelectorAll('#vc-wave .vc-bar');
+    const data = new Uint8Array(vcAnalyser.frequencyBinCount);
+    vcAnalyser.getByteFrequencyData(data);
+    bars.forEach((b, i) => {
+      const v = data[Math.floor(i * data.length / VC_BARS)] || 0;
+      b.style.height = Math.max(4, (v / 255) * 36) + 'px';
+    });
+  }, 80);
+}
+
+function vcToggleMute() {
+  if (!vcStream) return;
+  vcMuted = !vcMuted;
+  vcStream.getAudioTracks().forEach(t => { t.enabled = !vcMuted; });
+  const btn = document.getElementById('vc-mute-btn');
+  const lbl = document.getElementById('vc-mute-lbl');
+  if (vcMuted) { btn.textContent = '🔇'; btn.className = 'vc-btn-ctrl muted'; lbl.textContent = 'ปิดไมค์'; }
+  else         { btn.textContent = '🎙️'; btn.className = 'vc-btn-ctrl';        lbl.textContent = 'ไมค์เปิด'; }
+}
+
+function vcHangup() {
+  clearInterval(vcTimerID); clearInterval(vcWaveID);
+  const totalSecs = vcSecs;
+  const totalMins = Math.floor(totalSecs / 60);
+  const remSecs   = totalSecs % 60;
+  const durLabel  = `${totalMins}:${String(remSecs).padStart(2, '0')}`;
+  if (vcRecorder && vcRecorder.state !== 'inactive') vcRecorder.stop();
+  vcStream?.getTracks().forEach(t => t.stop());
+  vcAudioCtx?.close().catch(() => {});
+  vcStream = vcAudioCtx = vcAnalyser = null;
+  document.getElementById('vc-wave').classList.remove('live');
+  document.querySelectorAll('#vc-wave .vc-bar').forEach(b => b.style.height = '4px');
+  document.getElementById('vc-stat-dur').textContent  = durLabel;
+  document.getElementById('vc-stat-min').textContent  = totalMins || '< 1';
+  document.getElementById('vc-stat-words').textContent = '…';
+  vcShowPhase(3);
+}
+
+function vcHardStop() {
+  clearInterval(vcTimerID); clearInterval(vcWaveID);
+  try { if (vcRecorder?.state !== 'inactive') vcRecorder.stop(); } catch {}
+  vcStream?.getTracks().forEach(t => t.stop());
+  try { vcAudioCtx?.close(); } catch {}
+  vcStream = vcAudioCtx = vcAnalyser = vcRecorder = null; vcChunks = [];
+}
+
+async function vcDoTranscribe() {
+  if (!vcBlob || vcBlob.size < 200) { vcShowTranscriptError('ไฟล์เสียงว่างเปล่า'); return; }
+  const fd = new FormData();
+  fd.append('audio', vcBlob, 'call.webm');
+  fd.append('lang', 'th-TH');
+  try {
+    const res  = await fetch(`${STT_URL}/transcribe`, { method: 'POST', body: fd, signal: AbortSignal.timeout(40000) });
+    const data = await res.json();
+    if (data.success && data.text) {
+      vcTranscript = data.text;
+      const wordCount = data.text.trim().split(/\s+/).length;
+      document.getElementById('vc-stat-words').textContent        = wordCount;
+      document.getElementById('vc-transcript-box').className      = 'vc-transcript-box';
+      document.getElementById('vc-transcript-box').textContent    = data.text;
+      document.getElementById('vc-transcript-status').textContent = '✅ ถอดเสียงสำเร็จ';
+      document.getElementById('vc-btn-ai').disabled               = false;
+      document.getElementById('vc-btn-send').disabled             = false;
+    } else { vcShowTranscriptError(data.error || 'ถอดเสียงไม่ได้'); }
+  } catch (e) { vcShowTranscriptError('เชื่อมต่อ STT server ไม่ได้ (localhost:5001)'); console.error(e); }
+}
+
+function vcShowTranscriptError(msg) {
+  document.getElementById('vc-stat-words').textContent        = '—';
+  document.getElementById('vc-transcript-box').className      = 'vc-transcript-box';
+  document.getElementById('vc-transcript-box').textContent    = `⚠️ ${msg}`;
+  document.getElementById('vc-transcript-status').textContent = '❌ ล้มเหลว';
+}
+
+async function vcAiSummary() {
+  if (!vcTranscript || !curRoom) return;
+  const displayName = myProf?.displayName || curUser?.displayName || 'User';
+  const durLabel    = `${Math.floor(vcSecs / 60)}:${String(vcSecs % 60).padStart(2, '0')}`;
+  const question    = `ช่วยสรุปเนื้อหาการสนทนาต่อไปนี้ให้ด้วยครับ (ระยะเวลา ${durLabel} นาที)\n\n${vcTranscript}`;
+  document.getElementById('vc-btn-ai').disabled   = true;
+  document.getElementById('vc-btn-send').disabled = true;
+  document.getElementById('vc-proc').classList.add('show');
+  try {
+    await fetch(`${API}/rooms/${curRoom}/baikao`, {
+      method: 'POST', headers: AH(),
+      body: JSON.stringify({ question, displayName, replyTo: null }),
+    });
+    toast('🤖 ส่งให้ Baikao สรุปแล้ว — ดูในห้องสนทนา', 'ok');
+    closeVoiceCall();
+  } catch {
+    toast('❌ Baikao ไม่ตอบสนอง', 'er');
+    document.getElementById('vc-btn-ai').disabled   = false;
+    document.getElementById('vc-btn-send').disabled = false;
+  } finally { document.getElementById('vc-proc').classList.remove('show'); }
+}
+
+async function vcSendTranscript() {
+  if (!vcTranscript || !curRoom) return;
+  const displayName = myProf?.displayName || curUser?.displayName || 'User';
+  const durLabel    = `${Math.floor(vcSecs / 60)}:${String(vcSecs % 60).padStart(2, '0')}`;
+  const msgText     = `📞 *Voice call — ${durLabel} นาที*\n\n${vcTranscript}`;
+  document.getElementById('vc-btn-send').disabled = true;
+  try {
+    await fetch(`${API}/rooms/${curRoom}/messages`, {
+      method: 'POST', headers: AH(),
+      body: JSON.stringify({ text: msgText, displayName, photoURL: myProf?.photoURL || curUser?.photoURL || '', replyTo: null }),
+    });
+    toast('✅ ส่ง transcript เข้าห้องแล้ว', 'ok');
+    closeVoiceCall();
+  } catch {
+    toast('❌ ส่งไม่ได้', 'er');
+    document.getElementById('vc-btn-send').disabled = false;
+  }
+}
+
+function vcInitBars() {
+  const wave = document.getElementById('vc-wave');
+  wave.innerHTML = '';
+  for (let i = 0; i < VC_BARS; i++) {
+    const b = document.createElement('div');
+    b.className = 'vc-bar'; b.style.height = '4px';
+    wave.appendChild(b);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// KEYBOARD & BACKDROP
+// ══════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (document.getElementById('pdfov').classList.contains('open'))   { closePDF(); return; }
+  if (document.getElementById('voiceov').classList.contains('open')) { closeVoiceCall(); return; }
+  if (replyingTo) { cancelReply(); }
+});
+document.getElementById('voiceov').addEventListener('click', e => {
+  if (e.target === document.getElementById('voiceov')) closeVoiceCall();
+});
+
+// ══════════════════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════════════════
+function openOv(id)  { document.getElementById(id).classList.add('open'); }
+function closeOv(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.ov').forEach(o => o.addEventListener('click', e => { if (e.target === o) closeOv(o.id); }));
+document.getElementById('rm-n').addEventListener('keydown', e => { if (e.key === 'Enter') subRoom(); });
+
+// ══════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════
+function toast(msg, type = 'in') {
+  const ic = { ok: '✅', er: '❌', in: 'ℹ️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${ic[type]}</span><span>${msg}</span>`;
+  document.getElementById('twrap').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ══════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════
+function scrollB() { const b = document.getElementById('msgs'); if (b) b.scrollTop = b.scrollHeight; }
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br/>');
+}
+</script>
+</body>
+</html>
